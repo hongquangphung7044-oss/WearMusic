@@ -32,6 +32,9 @@ object AppModule {
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .build()
     }
 

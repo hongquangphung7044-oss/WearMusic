@@ -105,7 +105,7 @@ class PluginImporter(
         
         return PluginInfo(
             name = nameMatch?.groupValues?.get(1) ?: "未知插件",
-            version = versionMatch?.groupValues?.get(2) ?: "1.0.0"
+            version = versionMatch?.groupValues?.get(1) ?: "1.0.0"
         )
     }
 

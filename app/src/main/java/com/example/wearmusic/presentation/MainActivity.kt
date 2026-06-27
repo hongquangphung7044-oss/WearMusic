@@ -55,22 +55,29 @@ fun AppNavHost(viewModel: PlayerViewModel, pluginRepo: PluginRepository) {
 
     SwipeDismissableNavHost(navController = navController, startDestination = "main") {
         composable("main") {
+            val nc = navController
             Scaffold(
                 vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
                 timeText = { TimeText() }
-            ) { HomePage(viewModel, navController) }
+            ) { HomePage(viewModel,
+                onSearch = { nc.navigate("search") },
+                onDownloads = { nc.navigate("downloads") },
+                onSettings = { nc.navigate("settings") }
+            ) }
         }
         composable("search") {
+            val nc = navController
             Scaffold(
                 vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
                 timeText = { TimeText() }
-            ) { SearchPage(pluginRepo, viewModel, navController) }
+            ) { SearchPage(pluginRepo, viewModel, { nc.navigate("main") }) }
         }
         composable("downloads") {
+            val nc = navController
             Scaffold(
                 vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
                 timeText = { TimeText() }
-            ) { DownloadsPage(viewModel, navController) }
+            ) { DownloadsPage(viewModel, { nc.navigate("main") }) }
         }
         composable("settings") {
             Scaffold(
@@ -82,7 +89,7 @@ fun AppNavHost(viewModel: PlayerViewModel, pluginRepo: PluginRepository) {
 }
 
 @Composable
-fun HomePage(viewModel: PlayerViewModel, navController: androidx.wear.compose.navigation.WearNavigatorController) {
+fun HomePage(viewModel: PlayerViewModel, onSearch: () -> Unit, onDownloads: () -> Unit, onSettings: () -> Unit) {
     val state by viewModel.playerState.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     val progress by viewModel.progress.collectAsState()
@@ -113,22 +120,22 @@ fun HomePage(viewModel: PlayerViewModel, navController: androidx.wear.compose.na
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Button(onClick = { navController.navigate("search") }, modifier = Modifier.weight(1f)) { Text("搜索") }
-                Button(onClick = { navController.navigate("downloads") }, modifier = Modifier.weight(1f)) { Text("下载") }
-                Button(onClick = { navController.navigate("settings") }, modifier = Modifier.weight(1f)) { Text("设置") }
+                Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text("搜索") }
+                Button(onClick = onDownloads, modifier = Modifier.weight(1f)) { Text("下载") }
+                Button(onClick = onSettings, modifier = Modifier.weight(1f)) { Text("设置") }
             }
         }
     }
 }
 
 @Composable
-fun SearchPage(pluginRepo: PluginRepository, viewModel: PlayerViewModel, navController: androidx.wear.compose.navigation.WearNavigatorController) {
-    SearchScreen(pluginRepo) { song -> viewModel.play(song); navController.navigate("main") }
+fun SearchPage(pluginRepo: PluginRepository, viewModel: PlayerViewModel, goHome: () -> Unit) {
+    SearchScreen(pluginRepo) { song -> viewModel.play(song); goHome() }
 }
 
 @Composable
-fun DownloadsPage(viewModel: PlayerViewModel, navController: androidx.wear.compose.navigation.WearNavigatorController) {
-    DownloadsScreen { song -> viewModel.play(song); navController.navigate("main") }
+fun DownloadsPage(viewModel: PlayerViewModel, goHome: () -> Unit) {
+    DownloadsScreen { song -> viewModel.play(song); goHome() }
 }
 
 @Composable

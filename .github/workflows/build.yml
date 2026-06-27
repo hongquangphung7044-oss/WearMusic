@@ -24,7 +24,8 @@ jobs:
       uses: gradle/actions/setup-gradle@v4
       with:
         gradle-version: 8.7
-        generate-job-summary: false
+        validate-wrappers: false
+        add-job-summary: never
 
     - name: Build with Gradle
       run: gradle assembleDebug

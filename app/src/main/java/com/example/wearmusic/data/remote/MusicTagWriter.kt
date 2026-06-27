@@ -41,7 +41,7 @@ class MusicTagWriter {
 
     fun writeTags(mp3File: File, tags: SongTags): Boolean {
         return try {
-            val mp3 = Mp3File(mp3File)
+            val mp3 = Mp3File(mp3File.absolutePath)
             var tag = mp3.id3v2Tag
             if (tag == null) {
                 mp3.removeId3v1Tag()
@@ -93,7 +93,7 @@ class MusicTagWriter {
 
     fun readTags(mp3File: File): SongTags? {
         return try {
-            val mp3 = Mp3File(mp3File)
+            val mp3 = Mp3File(mp3File.absolutePath)
             val tag = mp3.id3v2Tag ?: return null
             SongTags(
                 title = tag.title ?: "",

@@ -22,7 +22,7 @@ import java.io.FileOutputStream
 class DownloadWorker(
     context: Context,
     params: WorkerParameters
-) : CoroutineWorker(applicationContext, params) {
+) : CoroutineWorker(context, params) {
 
     private val client = OkHttpClient()
     private val lyricsService = LyricsService(client)

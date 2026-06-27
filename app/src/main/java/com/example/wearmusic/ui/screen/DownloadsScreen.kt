@@ -21,8 +21,6 @@ import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
 import com.example.wearmusic.data.model.Song
 import kotlinx.coroutines.Dispatchers
@@ -30,10 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-data class DownloadedSong(
-    val title: String, val artist: String, val album: String,
-    val filePath: String, val fileSize: Long
-)
+data class DownloadedSong(val title: String, val artist: String, val album: String, val filePath: String, val fileSize: Long)
 
 @Composable
 fun DownloadsScreen(onPlaySong: (Song) -> Unit = {}) {
@@ -42,35 +37,22 @@ fun DownloadsScreen(onPlaySong: (Song) -> Unit = {}) {
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     val listState = rememberScalingLazyListState()
+    if (isLoading) { scope.launch { downloads = scanDownloads(context); isLoading = false } }
 
-    if (isLoading) {
-        scope.launch { downloads = scanDownloads(context); isLoading = false }
-    }
-
-    ScalingLazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        state = listState,
-        vignette = { Vignette(position = VignettePosition.TopAndBottom) }
-    ) {
+    ScalingLazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
         item { ListHeader { Text("下载管理") } }
-
-        if (isLoading) {
-            item { CircularProgressIndicator() }
-        } else if (downloads.isEmpty()) {
-            item { Text("暂无下载内容", style = MaterialTheme.typography.body2, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp)) }
-            item { Text("搜索歌曲后可下载", style = MaterialTheme.typography.label2, textAlign = TextAlign.Center) }
+        if (isLoading) { item { CircularProgressIndicator() } }
+        else if (downloads.isEmpty()) {
+            item { Text("暂无下载内容", style = MaterialTheme.typography.body1, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp)) }
+            item { Text("搜索歌曲后可下载", style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
         } else {
-            item { Text("共 ${downloads.size} 首", style = MaterialTheme.typography.label2, modifier = Modifier.padding(vertical = 4.dp)) }
-            downloads.forEach { item ->
+            item { Text("共 ${downloads.size} 首", style = MaterialTheme.typography.caption1, modifier = Modifier.padding(vertical = 4.dp)) }
+            downloads.forEach { d ->
                 item {
-                    Chip(
-                        onClick = {
-                            onPlaySong(Song(id = item.filePath, title = item.title, artist = item.artist, album = item.album, localPath = item.filePath))
-                        },
-                        label = { Text(item.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        secondaryLabel = { Text("${item.artist}  ${formatSize(item.fileSize)}") },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                    )
+                    Chip(onClick = { onPlaySong(Song(id = d.filePath, title = d.title, artist = d.artist, album = d.album, localPath = d.filePath)) },
+                        label = { Text(d.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        secondaryLabel = { Text("${d.artist}  ${formatSize(d.fileSize)}") },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp))
                 }
             }
         }
@@ -80,26 +62,17 @@ fun DownloadsScreen(onPlaySong: (Song) -> Unit = {}) {
 private suspend fun scanDownloads(context: Context): List<DownloadedSong> = withContext(Dispatchers.IO) {
     val musicDir = context.getExternalFilesDir("music") ?: return@withContext emptyList()
     val songs = mutableListOf<DownloadedSong>()
-    musicDir.listFiles()?.forEach { songDir ->
-        if (songDir.isDirectory) {
-            val metadataFile = File(songDir, "metadata.json")
-            val mp3Files = songDir.listFiles { f -> f.name.endsWith(".mp3") }
-            if (mp3Files != null && mp3Files.isNotEmpty()) {
-                val mp3 = mp3Files.first()
-                val metadata = if (metadataFile.exists()) try { org.json.JSONObject(metadataFile.readText()) } catch (_: Exception) { null } else null
-                songs.add(DownloadedSong(
-                    title = metadata?.optString("title") ?: mp3.nameWithoutExtension,
-                    artist = metadata?.optString("artist") ?: "未知",
-                    album = metadata?.optString("album") ?: "",
-                    filePath = mp3.absolutePath, fileSize = mp3.length()
-                ))
+    musicDir.listFiles()?.forEach { sd ->
+        if (sd.isDirectory) {
+            val mf = File(sd, "metadata.json")
+            val mp3s = sd.listFiles { f -> f.name.endsWith(".mp3") }
+            if (mp3s != null && mp3s.isNotEmpty()) {
+                val m = mp3s.first()
+                val meta = if (mf.exists()) try { org.json.JSONObject(mf.readText()) } catch (_: Exception) { null } else null
+                songs.add(DownloadedSong(meta?.optString("title") ?: m.nameWithoutExtension, meta?.optString("artist") ?: "未知", meta?.optString("album") ?: "", m.absolutePath, m.length()))
             }
         }
     }
     songs
 }
-
-private fun formatSize(bytes: Long): String {
-    val mb = bytes / (1024.0 * 1024.0)
-    return if (mb >= 1) "%.1f MB".format(mb) else "${bytes / 1024} KB"
-}
+private fun formatSize(bytes: Long): String { val mb = bytes / (1024.0 * 1024.0); return if (mb >= 1) "%.1f MB".format(mb) else "${bytes / 1024} KB" }

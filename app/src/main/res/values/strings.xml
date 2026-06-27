@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WearMusic</string>
+    <string name="default_playlist">默认歌单</string>
+    <string name="search_hint">搜索音乐…</string>
+    <string name="play">播放</string>
+    <string name="pause">暂停</string>
+    <string name="next">下一首</string>
+    <string name="previous">上一首</string>
+    <string name="download">下载</string>
+    <string name="download_complete">下载完成</string>
+    <string name="download_failed">下载失败</string>
+</resources>

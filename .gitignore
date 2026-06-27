@@ -1,0 +1,30 @@
+# Gradle files
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration
+local.properties
+*.iml
+.idea/
+*.ipr
+*.iws
+
+# Build outputs
+*.apk
+*.aab
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Signing keys (NEVER commit!)
+*.jks
+*.keystore
+signing.properties
+
+# Temporary files
+*.tmp
+*.swp
+*.swo

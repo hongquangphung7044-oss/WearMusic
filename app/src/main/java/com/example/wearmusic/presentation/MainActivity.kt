@@ -10,15 +10,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.MaterialTheme
-import androidx.wear.compose.material3.ScalingLazyColumn
-import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.TimeText
-import androidx.wear.compose.material3.Vignette
-import androidx.wear.compose.material3.VignettePosition
-import androidx.wear.compose.material3.items
-import androidx.wear.compose.material3.rememberScalingLazyListState
+import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.ScalingLazyColumn
+import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.TimeText
+import androidx.wear.compose.material.Vignette
+import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material.items
+import androidx.wear.compose.material.rememberScalingLazyListState
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -91,7 +91,7 @@ fun PlayerScreen(
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = scalingLazyListState,
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
+        vignette = { Vignette(position = VignettePosition.TopAndBottom) },
         timeText = { TimeText() }
     ) {
         item {

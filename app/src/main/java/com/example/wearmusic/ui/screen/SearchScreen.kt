@@ -15,15 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.Chip
-import androidx.wear.compose.material3.ListHeader
-import androidx.wear.compose.material3.MaterialTheme
-import androidx.wear.compose.material3.ScalingLazyColumn
-import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.Vignette
-import androidx.wear.compose.material3.VignettePosition
-import androidx.wear.compose.material3.rememberScalingLazyListState
+import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ListHeader
+import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.ScalingLazyColumn
+import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.Vignette
+import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material.rememberScalingLazyListState
 import com.example.wearmusic.data.model.Song
 import com.example.wearmusic.plugin.PluginRepository
 import kotlinx.coroutines.launch
@@ -45,7 +45,7 @@ fun SearchScreen(
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) }
+        vignette = { Vignette(position = VignettePosition.TopAndBottom) }
     ) {
         item { ListHeader { Text("搜索音乐") } }
 

@@ -87,8 +87,8 @@ dependencies {
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
 
-    // jaudiotagger - ID3 标签处理（用于写入歌曲元数据）
-    implementation("org.bitbucket.ijabz:jaudiotagger:3.0.1")
+    // mp3agic - ID3 标签处理（写入歌曲元数据，兼容 Android）
+    implementation("com.mpatric:mp3agic:0.9.1")
 
     // Room
     implementation("androidx.room:room-runtime:2.6.1")

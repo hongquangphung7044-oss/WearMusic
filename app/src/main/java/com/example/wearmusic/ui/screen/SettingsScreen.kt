@@ -1,8 +1,5 @@
 package com.example.wearmusic.ui.screen
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,19 +8,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScalingLazyColumn
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.Vignette
+import androidx.wear.compose.material3.VignettePosition
+import androidx.wear.compose.material3.rememberScalingLazyListState
 import com.example.wearmusic.plugin.PluginRepository
 import com.example.wearmusic.ui.component.PluginImportDialog
 
 enum class Quality(val label: String, val bitrate: Int) {
-    STANDARD("标准 (128k)", 128),
-    HIGH("高品质 (320k)", 320),
-    LOSSLESS("无损", 999)
+    STANDARD("标准", 128), HIGH("高品质", 320), LOSSLESS("无损", 999)
 }
 
 @Composable
@@ -33,62 +32,40 @@ fun SettingsScreen(
     onClearCache: () -> Unit = {}
 ) {
     var showImportDialog by remember { mutableStateOf(false) }
+    val listState = rememberScalingLazyListState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+    ScalingLazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = listState,
+        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) }
     ) {
-        Text(
-            text = "设置",
-            style = MaterialTheme.typography.title1,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        item { ListHeader { Text("设置") } }
 
-        Text(text = "音质选择", style = MaterialTheme.typography.body2)
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Quality.values().forEach { quality ->
-                Button(
-                    onClick = { onQualityChange(quality) },
-                    modifier = Modifier.weight(1f)
-                ) {
+        item { Text("音质选择", style = MaterialTheme.typography.body2) }
+        Quality.values().forEach { quality ->
+            item {
+                Button(onClick = { onQualityChange(quality) }, modifier = Modifier.fillMaxWidth()) {
                     Text(quality.label)
                 }
             }
         }
 
-        Button(
-            onClick = { showImportDialog = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("导入插件")
+        item {
+            Button(onClick = { showImportDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("导入插件")
+            }
         }
-
-        Button(
-            onClick = onClearCache,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("清除缓存")
+        item {
+            Button(onClick = onClearCache, modifier = Modifier.fillMaxWidth()) {
+                Text("清除缓存")
+            }
         }
 
         val plugins = remember { pluginRepository.getInstalledPlugins() }
         if (plugins.isNotEmpty()) {
-            Text(
-                text = "已安装 (${plugins.size}个)",
-                style = MaterialTheme.typography.caption1,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            item { ListHeader { Text("已安装插件") } }
             plugins.forEach { p ->
-                Text(
-                    text = "${p.name} v${p.version}",
-                    style = MaterialTheme.typography.caption2
-                )
+                item { Text("${p.name} v${p.version}", style = MaterialTheme.typography.label2) }
             }
         }
     }

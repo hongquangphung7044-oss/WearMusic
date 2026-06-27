@@ -1,6 +1,5 @@
 package com.example.wearmusic.ui.screen
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,10 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.Card
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Chip
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScalingLazyColumn
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.Vignette
+import androidx.wear.compose.material3.VignettePosition
+import androidx.wear.compose.material3.rememberScalingLazyListState
 import com.example.wearmusic.data.model.Song
 import com.example.wearmusic.plugin.PluginRepository
 import kotlinx.coroutines.launch
@@ -35,69 +39,58 @@ fun SearchScreen(
     var isSearching by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-
     val installedPlugins = remember { pluginRepository.getInstalledPlugins() }
+    val listState = rememberScalingLazyListState()
 
-    Column(
+    ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        state = listState,
+        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) }
     ) {
-        Text(
-            text = "搜索音乐",
-            style = MaterialTheme.typography.title1,
-            modifier = Modifier.padding(top = 8.dp)
-        )
+        item { ListHeader { Text("搜索音乐") } }
 
         if (installedPlugins.isEmpty()) {
+            item {
+                Text(
+                    text = "请先在设置中导入插件",
+                    style = MaterialTheme.typography.body2,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(8.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        item {
             Text(
-                text = "请先在设置中导入插件",
-                style = MaterialTheme.typography.caption1,
-                color = androidx.compose.ui.graphics.Color.Red,
-                modifier = Modifier.padding(8.dp),
-                textAlign = TextAlign.Center
+                text = if (searchQuery.isEmpty()) "选择搜索词" else "搜索: $searchQuery",
+                style = MaterialTheme.typography.body2,
+                modifier = Modifier.padding(vertical = 4.dp)
             )
         }
 
-        Text(
-            text = if (searchQuery.isEmpty()) "选择搜索词" else "搜索: $searchQuery",
-            style = MaterialTheme.typography.body2,
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-
-        if (searchQuery.isNotEmpty() && isSearching) {
-            Text(
-                text = "搜索中...",
-                style = MaterialTheme.typography.caption1,
-                modifier = Modifier.padding(4.dp)
-            )
+        if (isSearching) {
+            item {
+                Text("搜索中...", style = MaterialTheme.typography.label2, modifier = Modifier.padding(4.dp))
+            }
         }
-
         if (statusMessage.isNotEmpty()) {
-            Text(
-                text = statusMessage,
-                style = MaterialTheme.typography.caption2,
-                modifier = Modifier.padding(4.dp),
-                textAlign = TextAlign.Center
-            )
+            item {
+                Text(statusMessage, style = MaterialTheme.typography.label2, modifier = Modifier.padding(4.dp), textAlign = TextAlign.Center)
+            }
         }
 
-        // 预设搜索词
         if (searchQuery.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                listOf("热门歌曲", "轻音乐", "中文歌", "英文歌", "日韩").forEach { keyword ->
+            item { ListHeader { Text("快捷搜索") } }
+            listOf("热门歌曲", "轻音乐", "中文歌", "英文歌").forEach { keyword ->
+                item {
                     Button(
                         onClick = {
-                            searchQuery = keyword
-                            isSearching = true
-                            statusMessage = ""
+                            searchQuery = keyword; isSearching = true; statusMessage = ""
                             scope.launch {
                                 try {
-                                    val results = pluginRepository.search(keyword)
-                                    searchResults = results
-                                    statusMessage = if (results.isEmpty()) "未找到结果" else "找到 ${results.size} 首"
+                                    searchResults = pluginRepository.search(keyword)
+                                    statusMessage = if (searchResults.isEmpty()) "未找到结果" else "找到 ${searchResults.size} 首"
                                 } catch (e: Exception) {
                                     statusMessage = "搜索失败: ${e.message}"
                                 }
@@ -106,55 +99,29 @@ fun SearchScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isSearching && installedPlugins.isNotEmpty()
-                    ) {
-                        Text(keyword)
-                    }
+                    ) { Text(keyword) }
                 }
             }
         } else {
-            Button(
-                onClick = { searchQuery = ""; searchResults = emptyList(); statusMessage = "" },
-                modifier = Modifier.padding(vertical = 4.dp)
-            ) {
-                Text("重新搜索")
+            item {
+                Button(onClick = { searchQuery = ""; searchResults = emptyList(); statusMessage = "" }, modifier = Modifier.fillMaxWidth()) {
+                    Text("重新搜索")
+                }
             }
         }
 
-        // 搜索结果
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
+        if (searchResults.isNotEmpty()) {
+            item { ListHeader { Text("搜索结果 (${searchResults.size})") } }
             searchResults.take(8).forEach { song ->
-                SongItem(song = song, onPlay = {
-                    onSongSelected(song)
-                }, onDownload = {
-                    onDownload(song)
-                })
+                item {
+                    Chip(
+                        onClick = { onSongSelected(song) },
+                        label = { Text(song.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        secondaryLabel = { Text(song.artist, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                    )
+                }
             }
-        }
-    }
-}
-
-@Composable
-private fun SongItem(song: Song, onPlay: () -> Unit, onDownload: () -> Unit) {
-    Card(
-        onClick = onPlay,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.body1,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.caption1,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

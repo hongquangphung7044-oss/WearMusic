@@ -4,30 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScalingLazyColumn
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.Vignette
+import androidx.wear.compose.material3.VignettePosition
+import androidx.wear.compose.material3.items
+import androidx.wear.compose.material3.rememberScalingLazyListState
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -42,7 +33,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     private val playerViewModel: PlayerViewModel by viewModels()
 
     @Inject
@@ -51,7 +41,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WearMusicTheme {
+            MaterialTheme {
                 WearMusicNavHost(playerViewModel, pluginRepository)
             }
         }
@@ -59,82 +49,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun WearMusicTheme(content: @Composable () -> Unit) {
-    MaterialTheme { content() }
-}
-
-@Composable
-fun WearMusicNavHost(
-    viewModel: PlayerViewModel,
-    pluginRepo: PluginRepository
-) {
+fun WearMusicNavHost(viewModel: PlayerViewModel, pluginRepo: PluginRepository) {
     val navController = rememberSwipeDismissableNavController()
 
-    SwipeDismissableNavHost(
-        navController = navController,
-        startDestination = "home"
-    ) {
+    SwipeDismissableNavHost(navController = navController, startDestination = "home") {
         composable("home") {
-            Scaffold(
-                vignette = { Vignette(vignettePosition = VignettePosition.Bottom) },
-                timeText = { TimeText() }
-            ) {
-                HomeScreen(
-                    playerViewModel = viewModel,
-                    onSearch = { navController.navigate("search") },
-                    onDownloads = { navController.navigate("downloads") },
-                    onSettings = { navController.navigate("settings") }
-                )
-            }
+            PlayerScreen(
+                playerViewModel = viewModel,
+                onSearch = { navController.navigate("search") },
+                onDownloads = { navController.navigate("downloads") },
+                onSettings = { navController.navigate("settings") }
+            )
         }
-
         composable("search") {
-            Scaffold(
-                vignette = { Vignette(vignettePosition = VignettePosition.Bottom) },
-                timeText = { TimeText() }
-            ) {
-                SearchScreen(
-                    pluginRepository = pluginRepo,
-                    onSongSelected = { song ->
-                        viewModel.play(song)
-                        navController.navigate("home")
-                    },
-                    onDownload = { song ->
-                        enqueueDownload(song)
-                    }
-                )
-            }
+            SearchScreen(
+                pluginRepository = pluginRepo,
+                onSongSelected = { song -> viewModel.play(song); navController.navigate("home") }
+            )
         }
-
         composable("downloads") {
-            Scaffold(
-                vignette = { Vignette(vignettePosition = VignettePosition.Bottom) },
-                timeText = { TimeText() }
-            ) {
-                DownloadsScreen(onPlaySong = { song ->
-                    viewModel.play(song)
-                    navController.navigate("home")
-                })
-            }
+            DownloadsScreen(onPlaySong = { song -> viewModel.play(song); navController.navigate("home") })
         }
-
         composable("settings") {
-            Scaffold(
-                vignette = { Vignette(vignettePosition = VignettePosition.Bottom) },
-                timeText = { TimeText() }
-            ) {
-                SettingsScreen(pluginRepository = pluginRepo)
-            }
+            SettingsScreen(pluginRepository = pluginRepo)
         }
     }
 }
 
-private fun enqueueDownload(song: Song) {
-    // Will be implemented with WorkManager
-}
-
 @Composable
-fun HomeScreen(
+fun PlayerScreen(
     playerViewModel: PlayerViewModel,
     onSearch: () -> Unit,
     onDownloads: () -> Unit,
@@ -143,68 +86,60 @@ fun HomeScreen(
     val state by playerViewModel.playerState.collectAsState()
     val isPlaying by playerViewModel.isPlaying.collectAsState()
     val progress by playerViewModel.progress.collectAsState()
+    val scalingLazyListState = rememberScalingLazyListState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
-            .padding(horizontal = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    ScalingLazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = scalingLazyListState,
+        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
+        timeText = { TimeText() }
     ) {
-        val currentSong = when (state) {
-            is PlayerViewModel.PlayerState.Playing -> (state as PlayerViewModel.PlayerState.Playing).song
-            is PlayerViewModel.PlayerState.Paused -> (state as PlayerViewModel.PlayerState.Paused).song
-            else -> null
+        item {
+            Text(
+                text = when (state) {
+                    is PlayerViewModel.PlayerState.Playing -> (state as PlayerViewModel.PlayerState.Playing).song.title
+                    is PlayerViewModel.PlayerState.Paused -> (state as PlayerViewModel.PlayerState.Paused).song.title
+                    else -> "WearMusic"
+                },
+                style = MaterialTheme.typography.title1
+            )
         }
-
-        Text(
-            text = currentSong?.title ?: "WearMusic",
-            style = MaterialTheme.typography.title2,
-            textAlign = TextAlign.Center
-        )
-
-        Text(
-            text = currentSong?.artist ?: "",
-            style = MaterialTheme.typography.body2,
-            color = Color.Gray,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        CircularProgressBar(
-            progress = progress,
-            modifier = Modifier.padding(vertical = 8.dp).size(100.dp)
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(onClick = { playerViewModel.previous() }, modifier = Modifier.size(36.dp)) {
-                Text("<<")
-            }
-            Button(onClick = { playerViewModel.togglePlayPause() }, modifier = Modifier.size(48.dp)) {
-                Text(if (isPlaying) "||" else ">")
-            }
-            Button(onClick = { playerViewModel.next() }, modifier = Modifier.size(36.dp)) {
-                Text(">>")
+        item {
+            Text(
+                text = when (state) {
+                    is PlayerViewModel.PlayerState.Playing -> (state as PlayerViewModel.PlayerState.Playing).song.artist
+                    is PlayerViewModel.PlayerState.Paused -> (state as PlayerViewModel.PlayerState.Paused).song.artist
+                    else -> "腕上音乐"
+                },
+                style = MaterialTheme.typography.body2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        item {
+            Text(
+                text = "${(progress * 100).toInt()}%",
+                style = MaterialTheme.typography.body1
+            )
+        }
+        item {
+            Row {
+                Button(onClick = { playerViewModel.previous() }, modifier = Modifier.weight(1f)) {
+                    Text("<<")
+                }
+                Button(onClick = { playerViewModel.togglePlayPause() }, modifier = Modifier.weight(1f)) {
+                    Text(if (isPlaying) "||" else ">")
+                }
+                Button(onClick = { playerViewModel.next() }, modifier = Modifier.weight(1f)) {
+                    Text(">>")
+                }
             }
         }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-        ) {
-            Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text("搜索") }
-            Button(onClick = onDownloads, modifier = Modifier.weight(1f)) { Text("下载") }
-            Button(onClick = onSettings, modifier = Modifier.weight(1f)) { Text("设置") }
+        item {
+            Row {
+                Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text("搜索") }
+                Button(onClick = onDownloads, modifier = Modifier.weight(1f)) { Text("下载") }
+                Button(onClick = onSettings, modifier = Modifier.weight(1f)) { Text("设置") }
+            }
         }
-    }
-}
-
-@Composable
-fun CircularProgressBar(progress: Float, modifier: Modifier = Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Text(text = "${(progress * 100).toInt()}%", style = MaterialTheme.typography.body1)
     }
 }

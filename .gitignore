@@ -28,3 +28,4 @@ signing.properties
 *.tmp
 *.swp
 *.swo
+gradle/wrapper/gradle-wrapper.jar

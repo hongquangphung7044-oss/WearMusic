@@ -10,6 +10,7 @@ import com.example.wearmusic.data.remote.LyricsService
 import com.example.wearmusic.data.remote.MusicSearchService
 import com.example.wearmusic.data.remote.MusicTagWriter
 import com.example.wearmusic.plugin.PluginImporter
+import com.example.wearmusic.plugin.PluginRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -80,5 +81,14 @@ object AppModule {
         client: OkHttpClient
     ): PluginImporter {
         return PluginImporter(context, client)
+    }
+
+    @Provides
+    @Singleton
+    fun providePluginRepository(
+        @ApplicationContext context: Context,
+        pluginImporter: PluginImporter
+    ): PluginRepository {
+        return PluginRepository(context, pluginImporter)
     }
 }

@@ -33,8 +33,7 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.example.wearmusic.data.model.Song
 import com.example.wearmusic.player.PlayerViewModel
-import com.example.wearmusic.plugin.PluginImporter
-import com.example.wearmusic.ui.screen.DownloadItem
+import com.example.wearmusic.plugin.PluginRepository
 import com.example.wearmusic.ui.screen.DownloadsScreen
 import com.example.wearmusic.ui.screen.SearchScreen
 import com.example.wearmusic.ui.screen.SettingsScreen
@@ -47,13 +46,13 @@ class MainActivity : ComponentActivity() {
     private val playerViewModel: PlayerViewModel by viewModels()
 
     @Inject
-    lateinit var pluginImporter: PluginImporter
+    lateinit var pluginRepository: PluginRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             WearMusicTheme {
-                WearMusicNavHost(playerViewModel, pluginImporter)
+                WearMusicNavHost(playerViewModel, pluginRepository)
             }
         }
     }
@@ -61,15 +60,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun WearMusicTheme(content: @Composable () -> Unit) {
-    MaterialTheme {
-        content()
-    }
+    MaterialTheme { content() }
 }
 
 @Composable
 fun WearMusicNavHost(
     viewModel: PlayerViewModel,
-    pluginImporter: PluginImporter
+    pluginRepo: PluginRepository
 ) {
     val navController = rememberSwipeDismissableNavController()
 
@@ -97,9 +94,13 @@ fun WearMusicNavHost(
                 timeText = { TimeText() }
             ) {
                 SearchScreen(
+                    pluginRepository = pluginRepo,
                     onSongSelected = { song ->
                         viewModel.play(song)
                         navController.navigate("home")
+                    },
+                    onDownload = { song ->
+                        enqueueDownload(song)
                     }
                 )
             }
@@ -110,7 +111,10 @@ fun WearMusicNavHost(
                 vignette = { Vignette(vignettePosition = VignettePosition.Bottom) },
                 timeText = { TimeText() }
             ) {
-                DownloadsScreen()
+                DownloadsScreen(onPlaySong = { song ->
+                    viewModel.play(song)
+                    navController.navigate("home")
+                })
             }
         }
 
@@ -119,10 +123,14 @@ fun WearMusicNavHost(
                 vignette = { Vignette(vignettePosition = VignettePosition.Bottom) },
                 timeText = { TimeText() }
             ) {
-                SettingsScreen(pluginImporter = pluginImporter)
+                SettingsScreen(pluginRepository = pluginRepo)
             }
         }
     }
+}
+
+private fun enqueueDownload(song: Song) {
+    // Will be implemented with WorkManager
 }
 
 @Composable
@@ -165,9 +173,7 @@ fun HomeScreen(
 
         CircularProgressBar(
             progress = progress,
-            modifier = Modifier
-                .padding(vertical = 8.dp)
-                .size(100.dp)
+            modifier = Modifier.padding(vertical = 8.dp).size(100.dp)
         )
 
         Row(
@@ -189,15 +195,9 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         ) {
-            Button(onClick = onSearch, modifier = Modifier.weight(1f)) {
-                Text("搜索")
-            }
-            Button(onClick = onDownloads, modifier = Modifier.weight(1f)) {
-                Text("下载")
-            }
-            Button(onClick = onSettings, modifier = Modifier.weight(1f)) {
-                Text("设置")
-            }
+            Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text("搜索") }
+            Button(onClick = onDownloads, modifier = Modifier.weight(1f)) { Text("下载") }
+            Button(onClick = onSettings, modifier = Modifier.weight(1f)) { Text("设置") }
         }
     }
 }
@@ -205,9 +205,6 @@ fun HomeScreen(
 @Composable
 fun CircularProgressBar(progress: Float, modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Text(
-            text = "${(progress * 100).toInt()}%",
-            style = MaterialTheme.typography.body1
-        )
+        Text(text = "${(progress * 100).toInt()}%", style = MaterialTheme.typography.body1)
     }
 }

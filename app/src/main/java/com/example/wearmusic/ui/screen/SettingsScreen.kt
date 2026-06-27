@@ -17,19 +17,20 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.wearmusic.plugin.PluginImporter
+import com.example.wearmusic.plugin.PluginRepository
 import com.example.wearmusic.ui.component.PluginImportDialog
 
-/**
- * 设置界面
- * 音质选择、下载设置、清除缓存、插件导入
- */
+enum class Quality(val label: String, val bitrate: Int) {
+    STANDARD("标准 (128k)", 128),
+    HIGH("高品质 (320k)", 320),
+    LOSSLESS("无损", 999)
+}
+
 @Composable
 fun SettingsScreen(
-    pluginImporter: PluginImporter,
+    pluginRepository: PluginRepository,
     onQualityChange: (Quality) -> Unit = {},
-    onClearCache: () -> Unit = {},
-    onPluginImported: (PluginImporter.ImportedPlugin) -> Unit = {}
+    onClearCache: () -> Unit = {}
 ) {
     var showImportDialog by remember { mutableStateOf(false) }
 
@@ -46,12 +47,8 @@ fun SettingsScreen(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        Text(
-            text = "音质选择",
-            style = MaterialTheme.typography.body2
-        )
+        Text(text = "音质选择", style = MaterialTheme.typography.body2)
 
-        // 音质切换按钮
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth()
@@ -66,53 +63,41 @@ fun SettingsScreen(
             }
         }
 
-        // 插件导入按钮
         Button(
             onClick = { showImportDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("📦 导入插件")
+            Text("导入插件")
         }
 
         Button(
             onClick = onClearCache,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("🧹 清除缓存")
+            Text("清除缓存")
         }
 
-        // 显示已导入的插件列表
-        val localPlugins = remember { pluginImporter.loadLocalPlugins() }
-        if (localPlugins.isNotEmpty()) {
+        val plugins = remember { pluginRepository.getInstalledPlugins() }
+        if (plugins.isNotEmpty()) {
             Text(
-                text = "已安装插件 (${localPlugins.size}个)",
+                text = "已安装 (${plugins.size}个)",
                 style = MaterialTheme.typography.caption1,
                 modifier = Modifier.padding(top = 8.dp)
             )
-            localPlugins.forEach { plugin ->
+            plugins.forEach { p ->
                 Text(
-                    text = "${plugin.name} v${plugin.version}",
+                    text = "${p.name} v${p.version}",
                     style = MaterialTheme.typography.caption2
                 )
             }
         }
     }
 
-    // 插件导入对话框
     if (showImportDialog) {
         PluginImportDialog(
-            pluginImporter = pluginImporter,
-            onImportSuccess = { plugin ->
-                onPluginImported(plugin)
-                showImportDialog = false
-            },
+            pluginRepository = pluginRepository,
+            onImportSuccess = { showImportDialog = false },
             onDismiss = { showImportDialog = false }
         )
     }
-}
-
-enum class Quality(val label: String, val bitrate: Int) {
-    STANDARD("标准 (128k)", 128),
-    HIGH("高品质 (320k)", 320),
-    LOSSLESS("无损", 999)
 }

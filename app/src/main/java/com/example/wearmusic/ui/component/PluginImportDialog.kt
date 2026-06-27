@@ -11,132 +11,86 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.wearmusic.plugin.PluginImporter
+import com.example.wearmusic.plugin.PluginRepository
 import kotlinx.coroutines.launch
 
-/**
- * 插件导入对话框组件
- * 支持通过 URL 导入 JS 插件
- */
+private val PRESET_PLUGINS = listOf(
+    "示例来源 1" to "https://raw.githubusercontent.com/hongquangphung7044-oss/WearMusic/main/app/src/main/assets/plugins/demo-plugin.js"
+)
+
 @Composable
 fun PluginImportDialog(
-    pluginImporter: PluginImporter,
-    onImportSuccess: (PluginImporter.ImportedPlugin) -> Unit = {},
+    pluginRepository: PluginRepository,
+    onImportSuccess: () -> Unit = {},
     onDismiss: () -> Unit = {}
 ) {
-    var url by remember { mutableStateOf("") }
+    var statusMessage by remember { mutableStateOf("") }
     var isImporting by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var success by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    Card(
-        onClick = { },
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-        ) {
-            Text(
-                text = "导入插件",
-                style = MaterialTheme.typography.title3,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+        Text(
+            text = "导入音乐插件",
+            style = MaterialTheme.typography.title3,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            Text(
-                text = "输入插件 URL",
-                style = MaterialTheme.typography.caption1,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+        Text(
+            text = "选择要导入的插件来源",
+            style = MaterialTheme.typography.caption1,
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+        )
 
-            // URL 显示（Wear 上没有 TextField，用 Text 显示）
-            Text(
-                text = url.ifEmpty { "点击设置 URL" },
-                style = MaterialTheme.typography.caption2,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-            )
-
-            // 预设的 URL 快捷按钮
-            if (url.isEmpty()) {
-                Button(
-                    onClick = { url = "https://example.com/plugin.js" },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("使用示例 URL")
-                }
-            }
-
-            // 错误提示
-            error?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.caption2,
-                    color = androidx.compose.ui.graphics.Color.Red,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            // 成功提示
-            success?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.caption2,
-                    color = androidx.compose.ui.graphics.Color.Green,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            // 导入按钮
+        PRESET_PLUGINS.forEach { (name, url) ->
             Button(
                 onClick = {
-                    if (url.isEmpty()) {
-                        error = "请输入 URL"
-                        return@Button
-                    }
                     isImporting = true
-                    error = null
-                    success = null
-
+                    statusMessage = "正在导入 $name..."
                     scope.launch {
-                        val result = pluginImporter.importFromUrl(url)
+                        val result = pluginRepository.importPlugin(url)
                         isImporting = false
-
                         result.onSuccess { plugin ->
-                            success = "导入成功: ${plugin.name}"
-                            onImportSuccess(plugin)
+                            statusMessage = "导入成功: ${plugin.name}"
+                            onImportSuccess()
                         }.onFailure { e ->
-                            error = "导入失败: ${e.message}"
+                            statusMessage = "失败: ${e.message}"
                         }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                enabled = !isImporting && url.isNotEmpty()
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                enabled = !isImporting
             ) {
-                Text(if (isImporting) "导入中..." else "导入")
+                Text(name)
             }
+        }
 
-            // 取消按钮
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("取消")
-            }
+        if (statusMessage.isNotEmpty()) {
+            Text(
+                text = statusMessage,
+                style = MaterialTheme.typography.caption2,
+                modifier = Modifier.padding(top = 8.dp),
+                textAlign = TextAlign.Center,
+                color = if (statusMessage.contains("成功"))
+                    androidx.compose.ui.graphics.Color.Green
+                else
+                    androidx.compose.ui.graphics.Color.White
+            )
+        }
+
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        ) {
+            Text("返回")
         }
     }
 }

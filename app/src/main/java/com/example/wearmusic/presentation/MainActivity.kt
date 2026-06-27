@@ -3,6 +3,7 @@ package com.example.wearmusic.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,8 +38,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var playerViewModel: PlayerViewModel
+    private val playerViewModel: PlayerViewModel by viewModels()
 
     @Inject
     lateinit var pluginImporter: PluginImporter

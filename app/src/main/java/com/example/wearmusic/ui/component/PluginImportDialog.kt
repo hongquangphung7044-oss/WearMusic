@@ -11,12 +11,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TextField
 import com.example.wearmusic.plugin.PluginImporter
 import kotlinx.coroutines.launch
 
@@ -58,17 +58,26 @@ fun PluginImportDialog(
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // URL 输入框
-            TextField(
-                value = url,
-                onValueChange = { 
-                    url = it
-                    error = null
-                    success = null
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("https://example.com/plugin.js") }
+            // URL 显示（Wear 上没有 TextField，用 Text 显示）
+            Text(
+                text = url.ifEmpty { "点击设置 URL" },
+                style = MaterialTheme.typography.caption2,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
             )
+
+            // 预设的 URL 快捷按钮
+            if (url.isEmpty()) {
+                Button(
+                    onClick = { url = "https://example.com/plugin.js" },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("使用示例 URL")
+                }
+            }
 
             // 错误提示
             error?.let {
@@ -116,7 +125,7 @@ fun PluginImportDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                enabled = !isImporting
+                enabled = !isImporting && url.isNotEmpty()
             ) {
                 Text(if (isImporting) "导入中..." else "导入")
             }
